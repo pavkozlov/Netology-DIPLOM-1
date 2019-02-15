@@ -46,6 +46,7 @@ class User:
             try:
                 get_response = self.send_request('users.get', params).json()['response'][0]['id']
             except KeyError:
+                print('I am not die')
                 time.sleep(2)
                 get_response = self.send_request('users.get', params).json()['response'][0]['id']
             return get_response
@@ -56,6 +57,7 @@ class User:
         try:
             get_response = self.send_request('groups.get', params).json()['response']['items']
         except KeyError:
+            print('I am not die')
             time.sleep(2)
             get_response = self.send_request('groups.get', params).json()['response']['items']
         return get_response
@@ -64,6 +66,7 @@ class User:
         try:
             get_response = self.send_request('friends.get', self.params).json()['response']['items']
         except KeyError:
+            print('I am not die')
             time.sleep(2)
             get_response = self.send_request('friends.get', self.params).json()['response']['items']
         return ','.join(str(i) for i in get_response)
@@ -77,6 +80,7 @@ class User:
         try:
             dict_list = self.send_request('groups.isMember', params).json()['response']
         except KeyError:
+            print('I am not die')
             time.sleep(2)
             dict_list = self.send_request('groups.isMember', params).json()['response']
         not_unique = []
@@ -101,6 +105,7 @@ class User:
             try:
                 get_response = self.send_request('groups.getById', params).json()['response'][0]
             except KeyError:
+                print('I am not die')
                 time.sleep(2)
                 get_response = self.send_request('groups.getById', params).json()['response'][0]
             data = {'name': get_response['name'], 'gid': get_response['id'],
