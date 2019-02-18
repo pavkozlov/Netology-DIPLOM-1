@@ -1,10 +1,14 @@
 import json
-
 import requests
 from urllib.parse import urlencode
 import time
+import sys
 
-TOKEN = '4b2ec088cb1369e042a4c055e0ae9708e3188bf85379dd727fc5edf0d39bffb90498cfc705f6ff5a23d9f'
+TOKEN = '42f5a9dabd0bba3cb830af3f01c806c36b5b067c86247ae32e7252bdbf205ee0fe50633a7b9cb991f0632'
+PARAMS = {
+    'v': 5.92,
+    'access_token': TOKEN
+}
 
 
 def get_access_token_link():
@@ -24,17 +28,22 @@ def get_access_token_link():
 
 class User:
     def __init__(self, slug):
-        self.params = {
-            'v': 5.92,
-            'access_token': TOKEN
-        }
+        self.params = PARAMS
         self.id = self.get_id(slug)
         self.group_list = self.get_self_group_list()
         self.friends_list = self.get_friends_list()
         self.params['user_id'] = self.id
 
     def send_request(self, method, params):
-        return requests.get(f'https://api.vk.com/method/{method}', params=params)
+        res = requests.get(f'https://api.vk.com/method/{method}', params=params)
+        try:
+            res.json()['error']
+            print('Ограничение по запросам. Ждём...')
+            time.sleep(2)
+            print('Работаем!')
+            return requests.get(f'https://api.vk.com/method/{method}', params=params)
+        except KeyError:
+            return res
 
     def get_id(self, slug):
         params = self.params
@@ -42,33 +51,17 @@ class User:
         if str(slug).isdigit():
             return slug
         else:
-
-            try:
-                get_response = self.send_request('users.get', params).json()['response'][0]['id']
-            except KeyError:
-                print('I am not die')
-                time.sleep(2)
-                get_response = self.send_request('users.get', params).json()['response'][0]['id']
+            get_response = self.send_request('users.get', params).json()['response'][0]['id']
             return get_response
 
     def get_self_group_list(self):
         params = self.params
         params['user_id'] = self.id
-        try:
-            get_response = self.send_request('groups.get', params).json()['response']['items']
-        except KeyError:
-            print('I am not die')
-            time.sleep(2)
-            get_response = self.send_request('groups.get', params).json()['response']['items']
+        get_response = self.send_request('groups.get', params).json()['response']['items']
         return get_response
 
     def get_friends_list(self):
-        try:
-            get_response = self.send_request('friends.get', self.params).json()['response']['items']
-        except KeyError:
-            print('I am not die')
-            time.sleep(2)
-            get_response = self.send_request('friends.get', self.params).json()['response']['items']
+        get_response = self.send_request('friends.get', self.params).json()['response']['items']
         return ','.join(str(i) for i in get_response)
 
     def return_not_unique_groups(self, group_id, user_ids):
@@ -77,12 +70,7 @@ class User:
         params['user_ids'] = user_ids
         if params.get('user_id'):
             del params['user_id']
-        try:
-            dict_list = self.send_request('groups.isMember', params).json()['response']
-        except KeyError:
-            print('I am not die')
-            time.sleep(2)
-            dict_list = self.send_request('groups.isMember', params).json()['response']
+        dict_list = self.send_request('groups.isMember', params).json()['response']
         not_unique = []
         for element in dict_list:
             if element['member'] == 1:
@@ -102,23 +90,19 @@ class User:
             params = self.params
             params['group_ids'] = i
             params['fields'] = 'members_count'
-            try:
-                get_response = self.send_request('groups.getById', params).json()['response'][0]
-            except KeyError:
-                print('I am not die')
-                time.sleep(2)
-                get_response = self.send_request('groups.getById', params).json()['response'][0]
+            get_response = self.send_request('groups.getById', params).json()['response'][0]
             data = {'name': get_response['name'], 'gid': get_response['id'],
                     'members_count': get_response['members_count']}
             my_list.append(data)
         with open(f'{self.id}-groups.json', 'a', encoding='utf-8') as file:
-
             json.dump(my_list, file, ensure_ascii=False, indent=3)
 
 
-# get_access_token_link()
-test = User(19541420)
-test2 = User('eshmargunov')
-
-test2.get_spy_result()
-test.get_spy_result()
+if __name__ == '__main__':
+    get_access_token_link()
+    if len(sys.argv) > 1:
+        user = User(sys.argv)
+        user.get_spy_result()
+    else:
+        test = User(19541420)
+        test.get_spy_result()
